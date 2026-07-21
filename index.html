@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ thống Quản lý Hồ sơ Kết nạp Đảng viên</title>
+<style>
+  :root {
+    --red: #C8102E;
+    --red-dark: #9E0B22;
+    --gold: #FFCD00;
+    --bg: #F4F5F7;
+    --card: #FFFFFF;
+    --text: #1F2430;
+    --text-light: #6B7280;
+    --border: #E5E7EB;
+    --success: #16A34A;
+    --warn: #D97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  /* ---------- LOGIN ---------- */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+  }
+  .login-box {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 40px 36px;
+    width: 380px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  .login-box h1 {
+    font-size: 20px;
+    text-align: center;
+    color: var(--red);
+    margin-bottom: 4px;
+  }
+  .login-box .sub {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .login-box .star { text-align:center; font-size: 30px; color: var(--gold); margin-bottom: 8px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; margin-top: 14px; }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--red); }
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+  }
+  .btn-primary {
+    background: var(--red);
+    color: white;
+    padding: 11px;
+    width: 100%;
+    font-weight: 600;
+    margin-top: 20px;
+  }
+  .btn-primary:hover { background: var(--red-dark); }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 12px; text-align: center; display:none; }
+
+  /* ---------- APP LAYOUT ---------- */
+  #appScreen { display: none; min-height: 100vh; }
+  header.topbar {
+    background: var(--red);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header.topbar .title { font-size: 16px; font-weight: 700; }
+  header.topbar .title .sub { font-size: 12px; font-weight: 400; opacity: 0.85; }
+  header.topbar .user-info { display: flex; align-items: center; gap: 14px; font-size: 13px; }
+  header.topbar button.logout {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    padding: 7px 14px;
+  }
+  header.topbar button.logout:hover { background: rgba(255,255,255,0.25); }
+
+  nav.tabs {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    gap: 4px;
+  }
+  nav.tabs button {
+    background: none;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: var(--text-light);
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+  }
+  nav.tabs button.active { color: var(--red); border-bottom-color: var(--red); font-weight: 700; }
+
+  main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+  }
+
+  /* dashboard stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 16px; margin-bottom: 20px;}
+  .stat-card { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 4px solid var(--red);}
+  .stat-card .num { font-size: 28px; font-weight: 700; color: var(--red); }
+  .stat-card .label { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+  /* toolbar */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .toolbar select, .toolbar input[type=text] { width: auto; min-width: 160px; }
+  .btn-add { background: var(--red); color: white; padding: 10px 18px; font-weight: 600; margin-left: auto; }
+  .btn-add:hover { background: var(--red-dark); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { background: #FAFAFA; font-weight: 600; color: var(--text-light); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.3px; }
+  tr:hover td { background: #FCFAFA; }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-cam_tinh { background: #E0E7FF; color: #4338CA; }
+  .badge-doi_tuong { background: #FEF3C7; color: #B45309; }
+  .badge-du_bi { background: #DBEAFE; color: #1D4ED8; }
+  .badge-chinh_thuc { background: #DCFCE7; color: #15803D; }
+
+  .action-link { color: var(--red); font-size: 13px; font-weight: 600; margin-right: 10px; cursor: pointer; background:none; padding: 0;}
+  .action-link:hover { text-decoration: underline; }
+
+  /* modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.45);
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    width: 480px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal-box h2 { font-size: 17px; margin-bottom: 4px; color: var(--red); }
+  .modal-box .modal-sub { font-size: 12px; color: var(--text-light); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-secondary { background: #F1F1F1; color: var(--text); padding: 10px 16px; flex: 1; }
+  .btn-confirm { background: var(--red); color: white; padding: 10px 16px; flex: 1; font-weight: 600; }
+  .btn-confirm:hover { background: var(--red-dark); }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--text-light); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text); color: white;
+    padding: 12px 20px; border-radius: 8px; font-size: 13px;
+    z-index: 200; display: none;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--red); }
+
+  @media (max-width: 700px) {
+    main { padding: 14px; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .btn-add { margin-left: 0; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="star">★</div>
+    <h1>HỆ THỐNG QUẢN LÝ HỒ SƠ KẾT NẠP ĐẢNG VIÊN</h1>
+    <div class="sub">Ban Xây dựng Đảng</div>
+    <form id="loginForm">
+      <label>Tên đăng nhập</label>
+      <input type="text" id="loginUsername" required autocomplete="username">
+      <label>Mật khẩu</label>
+      <input type="password" id="loginPassword" required autocomplete="current-password">
+      <button type="submit" class="btn-primary">Đăng nhập</button>
+      <div class="error-msg" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= APP SCREEN ================= -->
+<div id="appScreen">
+  <header class="topbar">
+    <div class="title">Quản lý Hồ sơ Kết nạp Đảng viên
+      <div class="sub" id="chiBoLabel"></div>
+    </div>
+    <div class="user-info">
+      <span id="userDisplay"></span>
+      <button class="logout" onclick="doLogout()">Đăng xuất</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-page="dashboard">Tổng quan</button>
+    <button class="tab-btn" data-page="hoso">Hồ sơ</button>
+    <button class="tab-btn" data-page="quanly" id="tabQuanLy" style="display:none;">Quản trị</button>
+  </nav>
+
+  <main>
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="card">
+        <h3 style="margin-bottom:14px; font-size:15px;">Phân bố theo chi bộ</h3>
+        <table id="byChiBoTable"><thead><tr><th>Chi bộ</th><th>Số hồ sơ</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- HO SO -->
+    <div class="page" id="page-hoso">
+      <div class="card">
+        <div class="toolbar">
+          <select id="filterGiaiDoan">
+            <option value="">Tất cả giai đoạn</option>
+            <option value="cam_tinh">Cảm tình Đảng</option>
+            <option value="doi_tuong">Đối tượng kết nạp</option>
+            <option value="du_bi">Đảng viên dự bị</option>
+            <option value="chinh_thuc">Đảng viên chính thức</option>
+          </select>
+          <select id="filterChiBo"><option value="">Tất cả chi bộ</option></select>
+          <input type="text" id="searchBox" placeholder="Tìm theo tên...">
+          <button class="btn-add" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Họ tên</th><th>Ngày sinh</th><th>Chi bộ</th><th>Giai đoạn</th><th>Cập nhật</th><th>Hồ sơ</th><th></th>
+          </tr></thead>
+          <tbody id="hoSoTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="hoSoEmpty" style="display:none;">Chưa có hồ sơ nào.</div>
+      </div>
+    </div>
+
+    <!-- QUAN TRI (admin only) -->
+    <div class="page" id="page-quanly">
+      <div class="card">
+        <h3 style="margin-bottom:14px; font-size:15px;">Danh sách chi bộ</h3>
+        <table><thead><tr><th>Mã chi bộ</th><th>Tên chi bộ</th></tr></thead><tbody id="chiBoTableBody"></tbody></table>
+        <button class="btn-add" style="margin-top:14px;" onclick="openChiBoModal()">+ Thêm chi bộ</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:14px; font-size:15px;">Danh sách người dùng</h3>
+        <table><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Chi bộ</th></tr></thead><tbody id="userTableBody"></tbody></table>
+        <button class="btn-add" style="margin-top:14px;" onclick="openUserModal()">+ Thêm người dùng</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ================= MODAL: Ho So ================= -->
+<div class="modal-overlay" id="hoSoModalOverlay">
+  <div class="modal-box">
+    <h2 id="hoSoModalTitle">Thêm hồ sơ</h2>
+    <div class="modal-sub">Nhập thông tin đảng viên / đối tượng kết nạp</div>
+    <input type="hidden" id="hoSoId">
+    <label>Họ tên *</label>
+    <input type="text" id="fHoTen" required>
+    <label>Ngày sinh</label>
+    <input type="date" id="fNgaySinh">
+    <label>Giới tính</label>
+    <select id="fGioiTinh"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select>
+    <label>Chi bộ *</label>
+    <select id="fChiBo" required></select>
+    <label>Giai đoạn hiện tại</label>
+    <select id="fGiaiDoan">
+      <option value="cam_tinh">Cảm tình Đảng</option>
+      <option value="doi_tuong">Đối tượng kết nạp</option>
+      <option value="du_bi">Đảng viên dự bị</option>
+      <option value="chinh_thuc">Đảng viên chính thức</option>
+    </select>
+    <label>Link hồ sơ Google Drive</label>
+    <input type="text" id="fLinkDrive" placeholder="https://drive.google.com/...">
+    <label>Ghi chú</label>
+    <textarea id="fGhiChu" rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('hoSoModalOverlay')">Huỷ</button>
+      <button class="btn-confirm" onclick="saveHoSo()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Chi Bo ================= -->
+<div class="modal-overlay" id="chiBoModalOverlay">
+  <div class="modal-box">
+    <h2>Thêm chi bộ</h2>
+    <label>Mã chi bộ (để trống sẽ tự sinh)</label>
+    <input type="text" id="fChiBoId">
+    <label>Tên chi bộ *</label>
+    <input type="text" id="fTenChiBo" required>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('chiBoModalOverlay')">Huỷ</button>
+      <button class="btn-confirm" onclick="saveChiBo()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: User ================= -->
+<div class="modal-overlay" id="userModalOverlay">
+  <div class="modal-box">
+    <h2>Thêm người dùng</h2>
+    <label>Tên đăng nhập *</label>
+    <input type="text" id="fUsername" required>
+    <label>Mật khẩu *</label>
+    <input type="text" id="fUserPassword" required>
+    <label>Họ tên</label>
+    <input type="text" id="fUserHoTen">
+    <label>Vai trò</label>
+    <select id="fUserRole">
+      <option value="bi_thu">Bí thư chi bộ</option>
+      <option value="admin">Admin</option>
+    </select>
+    <label>Chi bộ (bắt buộc nếu là Bí thư)</label>
+    <select id="fUserChiBo"></select>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('userModalOverlay')">Huỷ</button>
+      <button class="btn-confirm" onclick="saveUser()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== CẤU HÌNH ====================
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7QgoWpADsplqPbwbZFGfjW2KVp4Xqf8blFpgrvk0oDxJ8TXWA8_7CBy1I9lk3y-RaTw/exec';
+
+const GIAI_DOAN_LABEL = {
+  cam_tinh: 'Cảm tình Đảng',
+  doi_tuong: 'Đối tượng kết nạp',
+  du_bi: 'Đảng viên dự bị',
+  chinh_thuc: 'Đảng viên chính thức'
+};
+
+let state = {
+  token: localStorage.getItem('token') || null,
+  role: localStorage.getItem('role') || null,
+  chiBoId: localStorage.getItem('chiBoId') || null,
+  hoTen: localStorage.getItem('hoTen') || null,
+  chiBoList: [],
+  hoSoList: []
+};
+
+// ==================== API HELPER ====================
+async function api(action, data = {}) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, token: state.token, ...data })
+  });
+  return res.json();
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(() => (t.style.display = 'none'), 2800);
+}
+
+// ==================== LOGIN ====================
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  if (API_URL.includes('DÁN_URL')) {
+    errEl.textContent = 'Chưa cấu hình API_URL trong file index.html. Xem hướng dẫn cài đặt.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const result = await api('login', { username, password });
+    if (result.success) {
+      state.token = result.token;
+      state.role = result.role;
+      state.chiBoId = result.chiBoId;
+      state.hoTen = result.hoTen;
+      localStorage.setItem('token', state.token);
+      localStorage.setItem('role', state.role);
+      localStorage.setItem('chiBoId', state.chiBoId || '');
+      localStorage.setItem('hoTen', state.hoTen || '');
+      initApp();
+    } else {
+      errEl.textContent = result.error || 'Đăng nhập thất bại';
+      errEl.style.display = 'block';
+    }
+  } catch (err) {
+    errEl.textContent = 'Không thể kết nối tới máy chủ. Kiểm tra lại đường truyền.';
+    errEl.style.display = 'block';
+  }
+});
+
+function doLogout() {
+  localStorage.clear();
+  state.token = null;
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ==================== INIT APP ====================
+async function initApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userDisplay').textContent = `${state.hoTen} (${state.role === 'admin' ? 'Admin' : 'Bí thư chi bộ'})`;
+
+  if (state.role === 'admin') {
+    document.getElementById('tabQuanLy').style.display = 'block';
+    document.getElementById('chiBoLabel').textContent = 'Toàn ban';
+  }
+
+  await loadChiBoList();
+  await loadDashboard();
+  await loadHoSoList();
+  if (state.role === 'admin') {
+    await loadUserList();
+  }
+
+  if (state.role !== 'admin') {
+    const cb = state.chiBoList.find(c => c.chi_bo_id === state.chiBoId);
+    document.getElementById('chiBoLabel').textContent = cb ? cb.ten_chi_bo : '';
+  }
+}
+
+// tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+  });
+});
+
+// ==================== CHI BO ====================
+async function loadChiBoList() {
+  const res = await api('getChiBoList');
+  if (res.success) {
+    state.chiBoList = res.data;
+    const selects = ['fChiBo', 'filterChiBo', 'fUserChiBo'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      const keepFirst = id === 'filterChiBo';
+      el.innerHTML = (keepFirst ? '<option value="">Tất cả chi bộ</option>' : '');
+      state.chiBoList.forEach(cb => {
+        const opt = document.createElement('option');
+        opt.value = cb.chi_bo_id;
+        opt.textContent = cb.ten_chi_bo;
+        el.appendChild(opt);
+      });
+    });
+
+    const tbody = document.getElementById('chiBoTableBody');
+    if (tbody) {
+      tbody.innerHTML = state.chiBoList.map(cb => `<tr><td>${cb.chi_bo_id}</td><td>${cb.ten_chi_bo}</td></tr>`).join('');
+    }
+  }
+}
+
+function openChiBoModal() {
+  document.getElementById('fChiBoId').value = '';
+  document.getElementById('fTenChiBo').value = '';
+  document.getElementById('chiBoModalOverlay').classList.add('active');
+}
+
+async function saveChiBo() {
+  const ten = document.getElementById('fTenChiBo').value.trim();
+  if (!ten) return showToast('Vui lòng nhập tên chi bộ', 'error');
+  const res = await api('addChiBo', { data: { chi_bo_id: document.getElementById('fChiBoId').value.trim(), ten_chi_bo: ten } });
+  if (res.success) {
+    showToast('Đã thêm chi bộ');
+    closeModal('chiBoModalOverlay');
+    await loadChiBoList();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
+// ==================== USERS ====================
+async function loadUserList() {
+  const res = await api('getUserList');
+  if (res.success) {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = res.data.map(u => {
+      const cb = state.chiBoList.find(c => c.chi_bo_id === u.chi_bo_id);
+      return `<tr><td>${u.username}</td><td>${u.ho_ten || ''}</td><td>${u.role === 'admin' ? 'Admin' : 'Bí thư chi bộ'}</td><td>${cb ? cb.ten_chi_bo : ''}</td></tr>`;
+    }).join('');
+  }
+}
+
+function openUserModal() {
+  document.getElementById('fUsername').value = '';
+  document.getElementById('fUserPassword').value = '';
+  document.getElementById('fUserHoTen').value = '';
+  document.getElementById('userModalOverlay').classList.add('active');
+}
+
+async function saveUser() {
+  const username = document.getElementById('fUsername').value.trim();
+  const password = document.getElementById('fUserPassword').value;
+  if (!username || !password) return showToast('Vui lòng nhập đủ tên đăng nhập và mật khẩu', 'error');
+  const data = {
+    username, password,
+    ho_ten: document.getElementById('fUserHoTen').value.trim(),
+    role: document.getElementById('fUserRole').value,
+    chi_bo_id: document.getElementById('fUserChiBo').value
+  };
+  const res = await api('addUser', { data });
+  if (res.success) {
+    showToast('Đã thêm người dùng');
+    closeModal('userModalOverlay');
+    await loadUserList();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard() {
+  const res = await api('getDashboard');
+  if (!res.success) return;
+  const d = res.data;
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = `
+    <div class="stat-card"><div class="num">${d.total}</div><div class="label">Tổng số hồ sơ</div></div>
+    ${Object.keys(GIAI_DOAN_LABEL).map(k => `
+      <div class="stat-card"><div class="num">${d.byGiaiDoan[k] || 0}</div><div class="label">${GIAI_DOAN_LABEL[k]}</div></div>
+    `).join('')}
+  `;
+  const tbody = document.querySelector('#byChiBoTable tbody');
+  tbody.innerHTML = Object.keys(d.byChiBo).map(cbId => {
+    const cb = state.chiBoList.find(c => c.chi_bo_id === cbId);
+    return `<tr><td>${cb ? cb.ten_chi_bo : cbId}</td><td>${d.byChiBo[cbId]}</td></tr>`;
+  }).join('') || '<tr><td colspan="2" style="color:#999;">Chưa có dữ liệu</td></tr>';
+}
+
+// ==================== HO SO ====================
+async function loadHoSoList() {
+  const res = await api('getHoSoList');
+  if (res.success) {
+    state.hoSoList = res.data;
+    renderHoSoTable();
+  }
+}
+
+function renderHoSoTable() {
+  const giaiDoanFilter = document.getElementById('filterGiaiDoan').value;
+  const chiBoFilter = document.getElementById('filterChiBo').value;
+  const search = document.getElementById('searchBox').value.trim().toLowerCase();
+
+  let list = state.hoSoList.filter(h => {
+    if (giaiDoanFilter && h.giai_doan !== giaiDoanFilter) return false;
+    if (chiBoFilter && h.chi_bo_id !== chiBoFilter) return false;
+    if (search && !h.ho_ten.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('hoSoTableBody');
+  document.getElementById('hoSoEmpty').style.display = list.length ? 'none' : 'block';
+
+  tbody.innerHTML = list.map(h => {
+    const cb = state.chiBoList.find(c => c.chi_bo_id === h.chi_bo_id);
+    const ngayCapNhat = h.ngay_cap_nhat ? new Date(h.ngay_cap_nhat).toLocaleDateString('vi-VN') : '';
+    const ngaySinh = h.ngay_sinh ? new Date(h.ngay_sinh).toLocaleDateString('vi-VN') : '';
+    return `<tr>
+      <td>${h.ho_ten}</td>
+      <td>${ngaySinh}</td>
+      <td>${cb ? cb.ten_chi_bo : h.chi_bo_id}</td>
+      <td><span class="badge badge-${h.giai_doan}">${GIAI_DOAN_LABEL[h.giai_doan] || h.giai_doan}</span></td>
+      <td>${ngayCapNhat}</td>
+      <td>${h.link_drive ? `<a href="${h.link_drive}" target="_blank">Xem</a>` : '—'}</td>
+      <td>
+        <button class="action-link" onclick="openHoSoModal('${h.id}')">Sửa</button>
+        ${state.role === 'admin' ? `<button class="action-link" style="color:#999" onclick="deleteHoSoRow('${h.id}')">Xoá</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+['filterGiaiDoan', 'filterChiBo', 'searchBox'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderHoSoTable);
+});
+
+function openHoSoModal(id) {
+  document.getElementById('hoSoId').value = id || '';
+  if (id) {
+    const h = state.hoSoList.find(x => x.id === id);
+    document.getElementById('hoSoModalTitle').textContent = 'Sửa hồ sơ';
+    document.getElementById('fHoTen').value = h.ho_ten;
+    document.getElementById('fNgaySinh').value = h.ngay_sinh ? new Date(h.ngay_sinh).toISOString().slice(0,10) : '';
+    document.getElementById('fGioiTinh').value = h.gioi_tinh || 'Nam';
+    document.getElementById('fChiBo').value = h.chi_bo_id;
+    document.getElementById('fGiaiDoan').value = h.giai_doan;
+    document.getElementById('fLinkDrive').value = h.link_drive || '';
+    document.getElementById('fGhiChu').value = h.ghi_chu || '';
+  } else {
+    document.getElementById('hoSoModalTitle').textContent = 'Thêm hồ sơ';
+    document.getElementById('fHoTen').value = '';
+    document.getElementById('fNgaySinh').value = '';
+    document.getElementById('fGioiTinh').value = 'Nam';
+    document.getElementById('fChiBo').value = state.role === 'admin' ? (state.chiBoList[0]?.chi_bo_id || '') : state.chiBoId;
+    document.getElementById('fGiaiDoan').value = 'cam_tinh';
+    document.getElementById('fLinkDrive').value = '';
+    document.getElementById('fGhiChu').value = '';
+  }
+  if (state.role !== 'admin') {
+    document.getElementById('fChiBo').value = state.chiBoId;
+    document.getElementById('fChiBo').disabled = true;
+  } else {
+    document.getElementById('fChiBo').disabled = false;
+  }
+  document.getElementById('hoSoModalOverlay').classList.add('active');
+}
+
+async function saveHoSo() {
+  const id = document.getElementById('hoSoId').value;
+  const hoTen = document.getElementById('fHoTen').value.trim();
+  if (!hoTen) return showToast('Vui lòng nhập họ tên', 'error');
+
+  const data = {
+    ho_ten: hoTen,
+    ngay_sinh: document.getElementById('fNgaySinh').value,
+    gioi_tinh: document.getElementById('fGioiTinh').value,
+    chi_bo_id: document.getElementById('fChiBo').value,
+    giai_doan: document.getElementById('fGiaiDoan').value,
+    link_drive: document.getElementById('fLinkDrive').value.trim(),
+    ghi_chu: document.getElementById('fGhiChu').value.trim()
+  };
+
+  const res = id ? await api('updateHoSo', { id, data }) : await api('addHoSo', { data });
+  if (res.success) {
+    showToast(id ? 'Đã cập nhật hồ sơ' : 'Đã thêm hồ sơ');
+    closeModal('hoSoModalOverlay');
+    await loadHoSoList();
+    await loadDashboard();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
+async function deleteHoSoRow(id) {
+  if (!confirm('Xoá hồ sơ này? Hành động không thể hoàn tác.')) return;
+  const res = await api('deleteHoSo', { id });
+  if (res.success) {
+    showToast('Đã xoá hồ sơ');
+    await loadHoSoList();
+    await loadDashboard();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// ==================== AUTO LOGIN ====================
+if (state.token) {
+  initApp();
+}
+</script>
+</body>
+</html>

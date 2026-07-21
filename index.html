@@ -281,12 +281,12 @@
     <div class="page" id="page-quanly">
       <div class="card">
         <h3 style="margin-bottom:14px; font-size:15px;">Danh sách chi bộ</h3>
-        <table><thead><tr><th>Mã chi bộ</th><th>Tên chi bộ</th></tr></thead><tbody id="chiBoTableBody"></tbody></table>
+        <table><thead><tr><th>Mã chi bộ</th><th>Tên chi bộ</th><th></th></tr></thead><tbody id="chiBoTableBody"></tbody></table>
         <button class="btn-add" style="margin-top:14px;" onclick="openChiBoModal()">+ Thêm chi bộ</button>
       </div>
       <div class="card">
         <h3 style="margin-bottom:14px; font-size:15px;">Danh sách người dùng</h3>
-        <table><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Chi bộ</th></tr></thead><tbody id="userTableBody"></tbody></table>
+        <table><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Chi bộ</th><th></th></tr></thead><tbody id="userTableBody"></tbody></table>
         <button class="btn-add" style="margin-top:14px;" onclick="openUserModal()">+ Thêm người dùng</button>
       </div>
     </div>
@@ -518,7 +518,7 @@ async function loadChiBoList() {
 
     const tbody = document.getElementById('chiBoTableBody');
     if (tbody) {
-      tbody.innerHTML = state.chiBoList.map(cb => `<tr><td>${cb.chi_bo_id}</td><td>${cb.ten_chi_bo}</td></tr>`).join('');
+      tbody.innerHTML = state.chiBoList.map(cb => `<tr><td>${cb.chi_bo_id}</td><td>${cb.ten_chi_bo}</td><td><button class="action-link" style="color:#999" onclick="deleteChiBoRow('${cb.chi_bo_id}')">Xoá</button></td></tr>`).join('');
     }
   }
 }
@@ -542,6 +542,19 @@ async function saveChiBo() {
   }
 }
 
+async function deleteChiBoRow(chiBoId) {
+  if (!confirm('Xoá chi bộ này? Hồ sơ/tài khoản đang gắn với chi bộ sẽ giữ nguyên nhưng không còn hiển thị tên chi bộ.')) return;
+  const res = await api('deleteChiBo', { chiBoId });
+  if (res.success) {
+    showToast('Đã xoá chi bộ');
+    await loadChiBoList();
+    await loadDashboard();
+    await loadHoSoList();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
 // ==================== USERS ====================
 async function loadUserList() {
   const res = await api('getUserList');
@@ -549,7 +562,8 @@ async function loadUserList() {
     const tbody = document.getElementById('userTableBody');
     tbody.innerHTML = res.data.map(u => {
       const cb = state.chiBoList.find(c => c.chi_bo_id === u.chi_bo_id);
-      return `<tr><td>${u.username}</td><td>${u.ho_ten || ''}</td><td>${u.role === 'admin' ? 'Admin' : 'Bí thư chi bộ'}</td><td>${cb ? cb.ten_chi_bo : ''}</td></tr>`;
+      const deleteBtn = u.role === 'admin' ? '' : `<button class="action-link" style="color:#999" onclick="deleteUserRow('${u.username}')">Xoá</button>`;
+      return `<tr><td>${u.username}</td><td>${u.ho_ten || ''}</td><td>${u.role === 'admin' ? 'Admin' : 'Bí thư chi bộ'}</td><td>${cb ? cb.ten_chi_bo : ''}</td><td>${deleteBtn}</td></tr>`;
     }).join('');
   }
 }
@@ -575,6 +589,17 @@ async function saveUser() {
   if (res.success) {
     showToast('Đã thêm người dùng');
     closeModal('userModalOverlay');
+    await loadUserList();
+  } else {
+    showToast(res.error, 'error');
+  }
+}
+
+async function deleteUserRow(username) {
+  if (!confirm(`Xoá tài khoản "${username}"? Hành động không thể hoàn tác.`)) return;
+  const res = await api('deleteUser', { username });
+  if (res.success) {
+    showToast('Đã xoá người dùng');
     await loadUserList();
   } else {
     showToast(res.error, 'error');
